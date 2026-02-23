@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Mapbox Traffic Toggle</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        
+        /* ส่วนของเมนูควบคุม */
+        .console {
+            position: absolute;
+            width: 200px;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            z-index: 1;
+            font-family: sans-serif;
+        }
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; }
+    </style>
+</head>
+<body>
+
+<div class="console">
+    <div class="toggle-container">
+        <label for="traffic-toggle">แสดงสภาพจราจร</label>
+        <input type="checkbox" id="traffic-toggle" checked>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+    // แทนที่ด้วย Access Token ของคุณเอง
+    mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
+
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/light-v11', // ใช้ Style เรียบๆ เพื่อให้เห็นเส้นจราจรชัดเจน
+        center: [100.5018, 13.7563], 
+        zoom: 12
+    });
+
+    map.on('load', () => {
+        // 1. เพิ่ม Source ข้อมูลจราจร
+        map.addSource('traffic', {
+            type: 'vector',
+            url: 'mapbox://mapbox.mapbox-traffic-v1'
+        });
+
+        // 2. เพิ่ม Layer เส้นจราจร (ใช้สีมาตรฐาน)
+        map.addLayer({
+            'id': 'traffic-layer',
+            'type': 'line',
+            'source': 'traffic',
+            'source-layer': 'traffic',
+            'layout': {
+                'visibility': 'visible' // ค่าเริ่มต้นให้แสดง
+            },
+            'paint': {
+                'line-width': 2.5,
+                'line-color': [
+                    'match',
+                    ['get', 'congestion'],
+                    'low', '#4fb06d',      // เขียว
+                    'moderate', '#f29e37', // ส้ม
+                    'heavy', '#e55e5e',    // แดง
+                    'severe', '#8b0000',   // แดงเข้ม
+                    '#ccc'                 // สีเทาถ้าไม่มีข้อมูล
+                ]
+            }
+        });
+
+        // 3. ฟังก์ชันควบคุมปุ่ม Switch
+        const trafficCheckbox = document.getElementById('traffic-toggle');
+        trafficCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                map.setLayoutProperty('traffic-layer', 'visibility', 'visible');
+            } else {
+                map.setLayoutProperty('traffic-layer', 'visibility', 'none');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
